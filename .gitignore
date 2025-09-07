@@ -140,3 +140,4 @@ coverage/
 # Ignore declaration maps
 *.d.ts.map
 
+config.json

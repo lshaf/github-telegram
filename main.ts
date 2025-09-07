@@ -96,6 +96,9 @@ app.post(
       return res.status(401).json({ error: 'Missing or invalid signature' });
     }
     const hmac = crypto.createHmac('sha256', secret);
+    if (!req.rawBody) {
+      return res.status(400).json({ error: 'Missing raw body for signature validation' });
+    }
     hmac.update(req.rawBody);
     const digest = 'sha256=' + hmac.digest('hex');
     if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))) {
@@ -140,3 +143,12 @@ app.post(
 );
 
 app.listen(PORT, () => console.log(`Webhook server running on port ${PORT}`));
+
+// Extend Express Request type to include rawBody so TypeScript knows about it.
+declare global {
+  namespace Express {
+    interface Request {
+      rawBody?: Buffer;
+    }
+  }
+}
