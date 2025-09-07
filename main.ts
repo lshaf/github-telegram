@@ -86,9 +86,14 @@ app.post(
       return res.status(404).json({ error: 'Project config not found' });
     }
 
-    // Respond 200 to GitHub ping event
-    if (req.headers['x-github-event'] === 'ping') {
+    // Only accept GitHub push events
+    const githubEvent = req.headers['x-github-event'];
+    if (githubEvent === 'ping') {
       return res.status(200).send('pong');
+    }
+
+    if (githubEvent !== 'push') {
+      return res.status(400).json({ error: 'Only push events are accepted' });
     }
 
     // --- Begin: GitHub signature validation ---
@@ -120,6 +125,7 @@ app.post(
       return res.status(400).json({ error: 'Malformed GitHub push event payload' });
     }
 
+    const branch = req.body.ref ? req.body.ref.replace('refs/heads/', '') : 'unknown';
     const commitMessages = commits
       .map((c) => {
         const added = c.added?.length || 0;
@@ -128,8 +134,13 @@ app.post(
         return `- ${c.message} ([${c.id.slice(0, 7)}](${c.url})) by ${c.author?.name ?? 'unknown'} (added: ${added}, modified: ${modified}, removed: ${removed})`;
       })
       .join('\n');
+    // Use sender for display, with GitHub profile URL
+    const sender = req.body.sender;
+    const senderName = sender?.login || sender?.name || 'unknown';
+    const senderUrl = sender?.html_url || '';
+    const senderDisplay = senderUrl ? `[${senderName}](${senderUrl})` : senderName;
     const message =
-      `🚀 *${pusher.name}* pushed to [${repository.name}](${repository.html_url}):\n\n${commitMessages}`;
+      `🚀 ${senderDisplay} pushed to [${repository.name}](${repository.html_url}) on branch *${branch}*:\n\n${commitMessages}`;
 
     try {
       await axios.post(`${TELEGRAM_API_DOMAIN}/bot${config.botToken}/sendMessage`, {
