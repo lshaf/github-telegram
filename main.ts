@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import axios from 'axios';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import {GithubPushEvent} from './github-interfaces';
 
 // --- Begin: Config loader ---
@@ -11,6 +12,7 @@ interface ProjectConfig {
   botToken: string;
   chatId: number | string;
   threadId?: number;
+  webhookSecret: string;
 }
 
 type ProjectConfigs = Record<string, ProjectConfig>;
@@ -41,6 +43,14 @@ const TELEGRAM_API_DOMAIN = process.env.TELEGRAM_API_DOMAIN || 'https://api.tele
 const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(bodyParser.json());
+
+// Capture raw body for signature validation
+const rawBodySaver = (req: any, res: any, buf: Buffer) => {
+  if (buf && buf.length) {
+    req.rawBody = buf;
+  }
+};
+app.use(bodyParser.json({ verify: rawBodySaver }));
 
 app.get('/', (_req: Request, res: Response) => {
   res.send(`
@@ -74,6 +84,28 @@ app.post(
 
     if (!config) {
       return res.status(404).json({ error: 'Project config not found' });
+    }
+
+    // --- Begin: GitHub signature validation ---
+    const secret = config.webhookSecret;
+    if (!secret) {
+      return res.status(500).json({ error: 'Webhook secret not configured for this project' });
+    }
+    const signature = req.headers['x-hub-signature-256'] as string;
+    if (!signature || !signature.startsWith('sha256=')) {
+      return res.status(401).json({ error: 'Missing or invalid signature' });
+    }
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(req.rawBody);
+    const digest = 'sha256=' + hmac.digest('hex');
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+    // --- End: GitHub signature validation ---
+
+    // Respond 200 to GitHub ping event
+    if (req.headers['x-github-event'] === 'ping') {
+      return res.status(200).send('pong');
     }
 
     const { pusher, repository, commits } = req.body;
