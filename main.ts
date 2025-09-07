@@ -42,7 +42,6 @@ const projectConfigs = loadProjectConfigs();
 const TELEGRAM_API_DOMAIN = process.env.TELEGRAM_API_DOMAIN || 'https://api.telegram.org';
 const PORT = process.env.PORT || 3000;
 const app = express();
-app.use(bodyParser.json());
 
 // Capture raw body for signature validation
 const rawBodySaver = (req: any, res: any, buf: Buffer) => {
@@ -147,8 +146,6 @@ app.post(
   }
 );
 
-app.listen(PORT, () => console.log(`Webhook server running on port ${PORT}`));
-
 // Extend Express Request type to include rawBody so TypeScript knows about it.
 declare global {
   namespace Express {
@@ -157,3 +154,5 @@ declare global {
     }
   }
 }
+
+app.listen(PORT, () => console.log(`Webhook server running on port ${PORT}`));
