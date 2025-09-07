@@ -171,7 +171,7 @@ app.post(
 
 // Utility to escape Telegram Markdown special characters
 function escapeMarkdown(text: string): string {
-  return text.replace(/[\_\*\[\]\(\)~`>#+\-=|{}\.!]/g, (m) => `\\${m}`);
+  return text.replace(/[\*\[\]\(\)~`>+=|{}!]/g, (m) => `\\${m}`);
 }
 
 // Extend Express Request type to include rawBody so TypeScript knows about it.
