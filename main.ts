@@ -37,6 +37,7 @@ function loadProjectConfigs(): ProjectConfigs {
 }
 // --- End: Config loader ---
 
+const isDev = process.env.NODE_ENV === 'development';
 const projectConfigs = loadProjectConfigs();
 
 const TELEGRAM_API_DOMAIN = process.env.TELEGRAM_API_DOMAIN || 'https://api.telegram.org';
@@ -133,10 +134,12 @@ app.post(
           const modified = c.modified?.length || 0;
           const removed = c.removed?.length || 0;
           const checksum = c.id.slice(0, 7);
-          const author = c.author?.name || 'unknown';
+          const author = escapeMarkdownInline(c.author?.name || 'unknown');
           // Escape triple backticks in commit message for Telegram MarkdownV2
           let safeMessage = c.message.replace(/```/g, "`\u200B``");
-          return `(${checksum}) by ${author} (added: ${added}, modified: ${modified}, removed: ${removed})\n\`\`\`\n${safeMessage}\n\`\`\``;
+          // Link checksum to commit URL
+          const checksumLink = `[${checksum}](${c.url})`;
+          return `(${checksumLink}) by ${author} (added: ${added}, modified: ${modified}, removed: ${removed})\n\`\`\`\n${safeMessage}\n\`\`\``;
         })
         .join('\n\n');
     // Use sender for display, with GitHub profile URL
@@ -150,6 +153,8 @@ app.post(
     if (message.length > 4096) {
       message = message.slice(0, 4000) + '\n\n...message truncated due to length.';
     }
+
+    if (isDev) console.log(message);
 
     try {
       await axios.post(`${TELEGRAM_API_DOMAIN}/bot${config.botToken}/sendMessage`, {
@@ -166,6 +171,12 @@ app.post(
   }
 );
 
+// Utility to escape Telegram Markdown special characters for inline text (author, sender, etc.)
+function escapeMarkdownInline(text: string): string {
+  // Escape _ * [ ] ( ) ~ ` > # + - = | { } . !
+  return text.replace(/[\_\*\[\]\(\)~`>#+\-=|{}\.!]/g, (m) => `\\${m}`);
+}
+
 // Extend Express Request type to include rawBody so TypeScript knows about it.
 declare global {
   namespace Express {
@@ -175,4 +186,4 @@ declare global {
   }
 }
 
-app.listen(PORT, () => console.log(`Webhook server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Webhook server running on port ${PORT} (isDev: ${isDev})`));
