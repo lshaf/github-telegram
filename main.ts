@@ -126,14 +126,20 @@ app.post(
     }
 
     const branch = req.body.ref ? req.body.ref.replace('refs/heads/', '') : 'unknown';
-    const commitMessages = commits
-      .map((c) => {
-        const added = c.added?.length || 0;
-        const modified = c.modified?.length || 0;
-        const removed = c.removed?.length || 0;
-        return `- ${c.message} ([${c.id.slice(0, 7)}](${c.url})) by ${c.author?.name ?? 'unknown'} (added: ${added}, modified: ${modified}, removed: ${removed})`;
-      })
-      .join('\n');
+    const maxCommits = 10;
+    const displayedCommits = commits.slice(0, maxCommits);
+    const commitMessages =
+      displayedCommits
+        .map((c) => {
+          const added = c.added?.length || 0;
+          const modified = c.modified?.length || 0;
+          const removed = c.removed?.length || 0;
+          return `- ${c.message} ([${c.id.slice(0, 7)}](${c.url})) by ${c.author?.name ?? 'unknown'} (added: ${added}, modified: ${modified}, removed: ${removed})`;
+        })
+        .join('\n') +
+      (commits.length > maxCommits
+        ? `\n...and ${commits.length - maxCommits} more commit(s)`
+        : '');
     // Use sender for display, with GitHub profile URL
     const sender = req.body.sender;
     const senderName = sender?.login || sender?.name || 'unknown';
