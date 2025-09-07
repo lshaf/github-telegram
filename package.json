@@ -1,0 +1,28 @@
+{
+  "name": "github-to-telegram-webhook",
+  "version": "1.0.0",
+  "description": "A dynamic GitHub webhook server that relays push events to Telegram threads/groups, managed with PM2.",
+  "main": "dist/webhook-to-telegram.js",
+  "scripts": {
+    "start": "node dist/webhook-to-telegram.js",
+    "dev": "ts-node-dev webhook-to-telegram.ts",
+    "build": "tsc",
+    "pm2": "pm2 start dist/webhook-to-telegram.js --name github-to-telegram"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "body-parser": "^1.20.2",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "lshaf",
+  "license": "MIT"
+}
