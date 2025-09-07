@@ -9,7 +9,6 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["main.ts"],
+  "include": ["*.ts"],
   "exclude": ["node_modules", "dist"]
 }
-

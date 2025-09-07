@@ -1,3 +1,4 @@
+import './env-loader';
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import axios from 'axios';
@@ -36,6 +37,7 @@ function loadProjectConfigs(): ProjectConfigs {
 
 const projectConfigs = loadProjectConfigs();
 
+const TELEGRAM_API_DOMAIN = process.env.TELEGRAM_API_DOMAIN || 'https://api.telegram.org';
 const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(bodyParser.json());
@@ -91,7 +93,7 @@ app.post(
       `🚀 *${pusher.name}* pushed to [${repository.name}](${repository.html_url}):\n${commitMessages}`;
 
     try {
-      await axios.post(`https://api.telegram.org/bot${config.botToken}/sendMessage`, {
+      await axios.post(`${TELEGRAM_API_DOMAIN}/bot${config.botToken}/sendMessage`, {
         chat_id: config.chatId,
         message_thread_id: config.threadId,
         text: message,

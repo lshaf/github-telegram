@@ -10,8 +10,10 @@
     "pm2": "pm2 start dist/webhook-to-telegram.js --name github-to-telegram"
   },
   "dependencies": {
+    "@types/dotenv": "^6.1.1",
     "axios": "^1.6.8",
     "body-parser": "^1.20.2",
+    "dotenv": "^17.2.2",
     "express": "^4.19.2"
   },
   "devDependencies": {
