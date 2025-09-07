@@ -50,6 +50,7 @@ const rawBodySaver = (req: any, res: any, buf: Buffer) => {
     req.rawBody = buf;
   }
 };
+// Only use bodyParser.json with verify to capture raw body
 app.use(bodyParser.json({ verify: rawBodySaver }));
 
 app.get('/', (_req: Request, res: Response) => {
@@ -86,30 +87,34 @@ app.post(
       return res.status(404).json({ error: 'Project config not found' });
     }
 
+    // Respond 200 to GitHub ping event
+    if (req.headers['x-github-event'] === 'ping') {
+      return res.status(200).send('pong');
+    }
+
     // --- Begin: GitHub signature validation ---
     const secret = config.webhookSecret;
     if (!secret) {
       return res.status(500).json({ error: 'Webhook secret not configured for this project' });
     }
-    const signature = req.headers['x-hub-signature-256'] as string;
-    if (!signature || !signature.startsWith('sha256=')) {
+    const signatureHeader = req.headers['x-hub-signature-256'] as string;
+    if (!signatureHeader || !signatureHeader.startsWith('sha256=')) {
       return res.status(401).json({ error: 'Missing or invalid signature' });
     }
-    const hmac = crypto.createHmac('sha256', secret);
     if (!req.rawBody) {
       return res.status(400).json({ error: 'Missing raw body for signature validation' });
     }
+    const hmac = crypto.createHmac('sha256', secret);
     hmac.update(req.rawBody);
-    const digest = 'sha256=' + hmac.digest('hex');
-    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))) {
+    const digest = hmac.digest('hex');
+    const signature = signatureHeader.slice('sha256='.length);
+    // Compare as buffers for timingSafeEqual
+    const sigBuf = Buffer.from(signature, 'hex');
+    const digestBuf = Buffer.from(digest, 'hex');
+    if (sigBuf.length !== digestBuf.length || !crypto.timingSafeEqual(sigBuf, digestBuf)) {
       return res.status(401).json({ error: 'Invalid signature' });
     }
     // --- End: GitHub signature validation ---
-
-    // Respond 200 to GitHub ping event
-    if (req.headers['x-github-event'] === 'ping') {
-      return res.status(200).send('pong');
-    }
 
     const { pusher, repository, commits } = req.body;
     if (!pusher || !repository || !commits) {
