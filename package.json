@@ -2,12 +2,12 @@
   "name": "github-to-telegram-webhook",
   "version": "1.0.0",
   "description": "A dynamic GitHub webhook server that relays push events to Telegram threads/groups, managed with PM2.",
-  "main": "dist/webhook-to-telegram.js",
+  "main": "dist/main.js",
   "scripts": {
-    "start": "node dist/webhook-to-telegram.js",
-    "dev": "ts-node-dev webhook-to-telegram.ts",
+    "start": "node dist/main.js",
+    "dev": "ts-node-dev main.ts",
     "build": "tsc",
-    "pm2": "pm2 start dist/webhook-to-telegram.js --name github-to-telegram"
+    "pm2": "pm2 start dist/main.js --name github-to-telegram"
   },
   "dependencies": {
     "@types/dotenv": "^6.1.1",
