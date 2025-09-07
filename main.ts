@@ -129,7 +129,7 @@ app.post(
       })
       .join('\n');
     const message =
-      `🚀 *${pusher.name}* pushed to [${repository.name}](${repository.html_url}):\n${commitMessages}`;
+      `🚀 *${pusher.name}* pushed to [${repository.name}](${repository.html_url}):\n\n${commitMessages}`;
 
     try {
       await axios.post(`${TELEGRAM_API_DOMAIN}/bot${config.botToken}/sendMessage`, {
